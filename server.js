@@ -26,16 +26,23 @@ const getCoffeeData = (req) => {
       return reject(new Error('File CSV tidak ditemukan'));
     }
 
+    // Membaca CSV dengan separator titik koma (;)
     fs.createReadStream(csvPath)
-      .pipe(csv())
+      .pipe(csv({ separator: ';' }))
       .on('data', (row, index) => {
-        // Menyesuaikan struktur key JSON seperti milik temanmu
+        // Membersihkan karakter kustom/aneh akibat encoding pada CSV
+        const title = row.coffee_title ? row.coffee_title.replace(//g, 'è') : `Coffee ${index + 1}`;
+        const detail = row.coffee_detail ? row.coffee_detail.replace(//g, "'") : '';
+
+        const thumbnailFile = row.coffee_thumbnails || 'caffe_latte_thumbnail.png';
+        const posterFile = row.coffee_poster || 'caffe_latte_poster.jpg';
+
         results.push({
-          coffee_id: parseInt(row.id || index + 1),
-          coffee_title: row.name || row.title || row.nama || 'Coffee Item',
-          coffee_detail: row.description || row.deskripsi || '',
-          coffee_thumbnails: `${baseUrl}/images/${row.thumbnail || 'caffe_latte_thumbnail.png'}`,
-          coffee_poster: `${baseUrl}/images/${row.poster || 'caffe_latte_poster.jpg'}`
+          coffee_id: parseInt(row.coffee_id || index + 1),
+          coffee_title: title,
+          coffee_detail: detail,
+          coffee_thumbnails: `${baseUrl}/images/${thumbnailFile}`,
+          coffee_poster: `${baseUrl}/images/${posterFile}`
         });
       })
       .on('end', () => resolve(results))
