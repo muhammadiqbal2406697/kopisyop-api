@@ -30,17 +30,21 @@ const getCoffeeData = (req) => {
     fs.createReadStream(csvPath)
       .pipe(csv({ separator: ';' }))
       .on('data', (row, index) => {
-        // Membersihkan karakter kustom/aneh akibat encoding pada CSV
-        const title = row.coffee_title ? row.coffee_title.replace(//g, 'è') : `Coffee ${index + 1}`;
-        const detail = row.coffee_detail ? row.coffee_detail.replace(//g, "'") : '';
+        // Pembersihan karakter bermasalah (\uFFFD / karakter tidak dikenal)
+        let title = row.coffee_title || `Coffee ${index + 1}`;
+        let detail = row.coffee_detail || '';
 
-        const thumbnailFile = row.coffee_thumbnails || 'caffe_latte_thumbnail.png';
-        const posterFile = row.coffee_poster || 'caffe_latte_poster.jpg';
+        // Membersihkan simbol replacement character akibat encoding CSV
+        title = title.replace(/\uFFFD/g, 'è').replace(/\?/g, 'è');
+        detail = detail.replace(/\uFFFD/g, "'").replace(/\?/g, "'");
+
+        const thumbnailFile = row.coffee_thumbnails ? row.coffee_thumbnails.trim() : 'caffe_latte_thumbnail.png';
+        const posterFile = row.coffee_poster ? row.coffee_poster.trim() : 'caffe_latte_poster.jpg';
 
         results.push({
           coffee_id: parseInt(row.coffee_id || index + 1),
-          coffee_title: title,
-          coffee_detail: detail,
+          coffee_title: title.trim(),
+          coffee_detail: detail.trim(),
           coffee_thumbnails: `${baseUrl}/images/${thumbnailFile}`,
           coffee_poster: `${baseUrl}/images/${posterFile}`
         });
